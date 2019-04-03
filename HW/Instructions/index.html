@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css"
+        integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+        crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet.js"
+        integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q=="
+        crossorigin=""></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <title>Earthquake Data</title>
+    <!-- Our CSS -->
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <div id="map">
+    </div>
+    <!-- <div id="controls">
+        <p>Change the map</p>
+        <input type="range" id="start" name="volume" min="0" max="11">
+        <label for="volume">Magnitude Filter</label>
+    </div> -->
+
+    <script>
+
+        // API key
+        const API_KEY = "pk.eyJ1Ijoic3VtbWVyaGUiLCJhIjoiY2p0cWdueG5kMDFlczRlcGw0OHdseHh6YiJ9.ZvRmuEIZKRsR5zzVBXiAng"
+        var myMap = L.map("map", {
+            center: [37.7749, -122.4194],
+            zoom: 2
+        });
+        // Adding tile layer
+        L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
+            attribution: "Map data &copy; <a href='https://www.openstreetmap.org/'>OpenStreetMap</a> contributors, <a href='https://creativecommons.org/licenses/by-sa/2.0/'>CC-BY-SA</a>, Imagery © <a href='https://www.mapbox.com/'>Mapbox</a>",
+            maxZoom: 18,
+            id: "mapbox.streets",
+            accessToken: API_KEY
+        }).addTo(myMap);
+
+        fetch(`https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson`)
+            .then(function (res) {
+                return res.json()
+            }).then(function (json) {
+
+                console.log(json)
+            
+                L.geoJson(json, {
+                    pointToLayer: function (feature, latlng) {
+
+                        let color;
+                        if (feature.properties.mag > 6) {
+                            color = "Indigo"
+                        } else if (feature.properties.mag > 5) {
+                            color = "Purple"
+                        } else if (feature.properties.mag > 4) {
+                            color = "DarkOrchid"
+                        } else if (feature.properties.mag > 3) {
+                            color = "MediumOrchid"
+                        } else if (feature.properties.mag > 2) {
+                            color = "Plum"
+                        } else if (feature.properties.mag > 1) {
+                            color = "Thistle"
+                        } else {
+                            color = "Lavender "
+                        }
+
+                        let radius;
+                        if (feature.properties.mag > 6) {
+                            radius = 11
+                        } else if (feature.properties.mag > 5) {
+                            radius = 9
+                        } else if (feature.properties.mag > 4) {
+                            radius = 7
+                        } else if (feature.properties.mag > 3) {
+                            radius = 5
+                        } else if (feature.properties.mag > 2) {
+                            radius = 3
+                        } else {
+                            radius = 2
+                        }
+
+                        return L.circleMarker(latlng, {
+                            radius: radius,
+                            fillColor: color,
+                            color: color,
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).bindPopup(`${feature.properties.place}; The mag was ${feature.properties.mag}`)
+                    } // end pointToLayer 
+                }).addTo(myMap)
+             })
+
+                function getColor(d) {
+                    return d > 6 ? "Indigo" :
+                        d > 5 ? "Purple" :
+                            d > 4 ? "DarkOrchid" :
+                                d > 3 ? "MediumOrchid" :
+                                    d > 2 ? "Plum" :
+                                        d > 1 ? "Thistle" :
+                                            "Lavender ";
+
+                }
+                var legend = L.control({ position: 'bottomright' });
+
+                legend.onAdd = function (myMap) {
+
+                    var div = L.DomUtil.create('div', 'info legend'),
+                        grades = [0, 1, 2, 3, 4, 5, 6],
+                        labels = [],
+                        from, to;
+
+                    // loop through our density intervals and generate a label with a colored square for each interval
+                    // for (var i = 0; i < grades.length; i++) {
+                    //     color = "#ff0000"
+                    //     div.innerHTML +=
+                    //         `<p style="color:${getColor(grades[i])}">${grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+')}</p>`
+
+                    // }
+
+                    // return div;
+                    for (var i = 0; i < grades.length; i++) {
+                        from = grades[i];
+                        to = grades[i + 1];
+
+                        labels.push(
+                            '<i style="background:' + getColor(from + 1) + '"></i> ' +
+                            from + (to ? '&ndash;' + to : '+'));
+                    }
+
+                    div.innerHTML = labels.join('<br>');
+                    return div;
+                };
+            
+            legend.addTo(myMap);
+                        
+                        
+                                                  
+</script>
+</body>
+</html>
